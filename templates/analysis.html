@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% block title %}Analysis — {{ case.case_id }}{% endblock %}
+{% block page_title %}Contradiction Analysis{% endblock %}
+{% block top_actions %}
+  <a href="/report/{{ case.case_id }}" class="btn btn-outline btn-sm"><i class="fas fa-file-pdf"></i> View Report</a>
+  <a href="/upload/{{ case.case_id }}" class="btn btn-outline btn-sm"><i class="fas fa-upload"></i> Add Files</a>
+{% endblock %}
+
+{% block content %}
+<!-- Case Banner -->
+<div style="background:white;border:1px solid var(--border);border-radius:var(--radius);padding:18px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+  <div>
+    <div style="font-size:16px;font-weight:700;">{{ case.title }}</div>
+    <div style="font-size:13px;color:var(--text-muted);">{{ case.case_id }} · Suspect: {{ case.suspect_name or 'Not specified' }}</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <span id="caseStatus" class="badge badge-active">Active</span>
+  </div>
+</div>
+
+<!-- API Key Warning -->
+<div id="apiKeyWarning" style="display:none;margin-bottom:20px;padding:14px 18px;background:#fef3c7;border:1px solid #fcd34d;border-radius:var(--radius);font-size:13px;color:#92400e;">
+  <i class="fas fa-key"></i> <strong>Anthropic API Key not configured.</strong>
+  <a href="/settings" style="color:#2563eb;font-weight:600;"> Configure it in Settings</a> to enable AI analysis. You can also run demo analysis below.
+</div>
+
+<!-- Main Grid -->
+<div class="grid-2" style="margin-bottom:20px;">
+  <!-- Input Panel -->
+  <div class="card">
+    <div class="section-title"><i class="fas fa-file-alt"></i> Suspect's Statement</div>
+    <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">Paste the suspect's statement or it will be loaded from uploaded file automatically.</div>
+    <textarea class="form-control" id="statementText" rows="10" placeholder="Paste the suspect's written statement here...&#10;&#10;Example: 'On the night of 15th March, I was at home watching TV from 8 PM. Around 10 PM I went to sleep. I did not leave my house that night. My phone was charging in my bedroom all evening...'"></textarea>
+
+    <div style="margin-top:16px;">
+      <div class="section-title" style="margin-top:0;"><i class="fas fa-database"></i> Available Evidence</div>
+      <div id="evidenceSummary" style="font-size:13px;color:var(--text-muted);">Loading uploaded files...</div>
+    </div>
+
+    <div style="margin-top:16px;padding:12px;background:var(--bg);border-radius:10px;">
+      <label class="form-label" style="margin-bottom:8px;">AI Analysis Mode</label>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+          <input type="radio" name="mode" value="full" checked> Full AI Analysis (requires API key)
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+          <input type="radio" name="mode" value="demo"> Demo Mode (sample contradictions)
+        </label>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:16px;padding:14px;" id="analyzeBtn" onclick="runAnalysis()">
+      <i class="fas fa-brain"></i> Run TRACE Analysis
+    </button>
+  </div>
+
+  <!-- Results Summary -->
+  <div class="card">
+    <div class="section-title"><i class="fas fa-chart-pie"></i> Analysis Results</div>
+    <div id="analysisSummary">
+      <div class="empty-state" style="padding:20px 0;">
+        <i class="fas fa-search"></i>
+        <h3>No Analysis Yet</h3>
+        <p>Run analysis to detect contradictions between the statement and digital records.</p>
+      </div>
+    </div>
+    <div id="severityChart" style="display:none;">
+      <div style="display:flex;gap:12px;margin:16px 0;flex-wrap:wrap;">
+        <div style="flex:1;min-width:80px;text-align:center;padding:14px;background:var(--danger-light);border-radius:10px;">
+          <div style="font-size:26px;font-weight:800;color:var(--danger);" id="highCount">0</div>
+          <div style="font-size:12px;color:var(--danger);font-weight:600;">HIGH</div>
+        </div>
+        <div style="flex:1;min-width:80px;text-align:center;padding:14px;background:var(--warning-light);border-radius:10px;">
+          <div style="font-size:26px;font-weight:800;color:var(--warning);" id="medCount">0</div>
+          <div style="font-size:12px;color:var(--warning);font-weight:600;">MEDIUM</div>
+        </div>
+        <div style="flex:1;min-width:80px;text-align:center;padding:14px;background:var(--success-light);border-radius:10px;">
+          <div style="font-size:26px;font-weight:800;color:var(--success);" id="lowCount">0</div>
+          <div style="font-size:12px;color:var(--success);font-weight:600;">LOW</div>
+        </div>
+      </div>
+      <div id="aiSummary" style="font-size:13px;color:var(--text-secondary);padding:12px;background:var(--bg);border-radius:10px;line-height:1.6;"></div>
+    </div>
+    <div id="runHistory" style="margin-top:16px;"></div>
+  </div>
+</div>
+
+<!-- Contradictions List -->
+<div class="card" id="contradictionsCard" style="display:none;">
+  <div class="card-header">
+    <div class="card-title"><i class="fas fa-flag" style="color:var(--danger)"></i> Detected Contradictions</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="filterContradictions('all',this)">All</button>
+        <button class="filter-tab" onclick="filterContradictions('high',this)">🔴 High</button>
+        <button class="filter-tab" onclick="filterContradictions('medium',this)">🟡 Medium</button>
+        <button class="filter-tab" onclick="filterContradictions('low',this)">🟢 Low</button>
+      </div>
+      <a href="/report/{{ case.case_id }}" class="btn btn-primary btn-sm"><i class="fas fa-file-pdf"></i> Export Report</a>
+    </div>
+  </div>
+  <div id="contradictionsList"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const caseId = '{{ case.case_id }}';
+let allContradictions = [];
+
+async function init() {
+  const keyData = await apiGet('/api/settings/apikey');
+  if (!keyData.has_key) {
+    document.getElementById('apiKeyWarning').style.display = 'block';
+  }
+  loadUploads();
+  loadExistingContradictions();
+  loadRunHistory();
+}
+
+async function loadUploads() {
+  const uploads = await apiGet(`/api/uploads/${caseId}`);
+  const div = document.getElementById('evidenceSummary');
+  if (uploads.length === 0) {
+    div.innerHTML = `<span style="color:var(--warning);">⚠ No files uploaded. <a href="/upload/${caseId}" style="color:var(--accent);">Upload files first.</a></span>`;
+    return;
+  }
+  const typeIcons = {cdr:'📞',whatsapp:'💬',gps:'📍',statement:'📄',social:'📱',email:'📧'};
+  div.innerHTML = uploads.map(u => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>${typeIcons[u.file_type]||'📁'} ${u.file_name}</span><span style="color:var(--text-muted);">${u.row_count} rows</span></div>`).join('');
+
+  // Auto-fill statement from uploaded file
+  const stmtFile = uploads.find(u => u.file_type === 'statement');
+  if (stmtFile && !document.getElementById('statementText').value) {
+    document.getElementById('statementText').placeholder = `Statement file loaded: ${stmtFile.file_name}\n\nYou can also paste/type the statement here to override the file.`;
+  }
+}
+
+async function loadExistingContradictions() {
+  allContradictions = await apiGet(`/api/contradictions/${caseId}`);
+  if (allContradictions.length > 0) {
+    displayContradictions(allContradictions);
+    updateSummary(allContradictions);
+  }
+}
+
+async function loadRunHistory() {
+  const runs = await apiGet(`/api/analysis_runs/${caseId}`);
+  const div = document.getElementById('runHistory');
+  if (runs.length === 0) return;
+  div.innerHTML = `<div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">PREVIOUS RUNS</div>` +
+    runs.slice(0,3).map(r => `
+      <div style="font-size:12px;color:var(--text-secondary);padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+        <span>${formatDate(r.run_at)}</span>
+        <span>${r.total_contradictions} contradictions · <span style="color:var(--danger);">${r.high_severity} high</span></span>
+      </div>
+    `).join('');
+}
+
+async function runAnalysis() {
+  const statement = document.getElementById('statementText').value.trim();
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  const btn = document.getElementById('analyzeBtn');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span> Analyzing...';
+
+  let contradictions = [];
+  let summary = '';
+
+  if (mode === 'demo') {
+    await new Promise(r => setTimeout(r, 2000));
+    const result = getDemoContradictions();
+    contradictions = result.contradictions;
+    summary = result.summary;
+  } else {
+    const uploads = await apiGet(`/api/uploads/${caseId}`);
+    const stmtFile = uploads.find(u => u.file_type === 'statement');
+    const statementToUse = statement || (stmtFile ? `[Statement from file: ${stmtFile.file_name}]` : '');
+
+    if (!statementToUse) {
+      showToast('Please paste the suspect statement or upload a statement file', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-brain"></i> Run TRACE Analysis';
+      return;
+    }
+
+    // Build evidence summary for the AI
+    const evidenceDesc = uploads.map(u => `${u.file_type.toUpperCase()}: ${u.file_name} (${u.row_count} rows)`).join('\n');
+
+    try {
+      const apiKey = sessionStorage.getItem('traceApiKey') || '';
+      if (!apiKey) {
+        showToast('No API key. Using demo mode instead.', 'info');
+        const result = getDemoContradictions();
+        contradictions = result.contradictions;
+        summary = result.summary;
+      } else {
+        const result = await callAnthropicAPI(apiKey, statementToUse, evidenceDesc, uploads);
+        contradictions = result.contradictions;
+        summary = result.summary;
+      }
+    } catch (e) {
+      showToast('AI analysis failed. Loading demo data.', 'error');
+      const result = getDemoContradictions();
+      contradictions = result.contradictions;
+      summary = result.summary;
+    }
+  }
+
+  // Store results
+  await apiPost(`/api/analyze/${caseId}`, { contradictions, summary });
+  allContradictions = contradictions;
+  displayContradictions(contradictions);
+  updateSummary(contradictions, summary);
+  loadRunHistory();
+  showToast(`Analysis complete! Found ${contradictions.length} contradictions.`, 'success');
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-brain"></i> Run TRACE Analysis';
+}
+
+async function callAnthropicAPI(apiKey, statement, evidenceDesc, uploads) {
+  const prompt = `You are TRACE, a forensic contradiction detection engine. 
+  
+Analyze this suspect's statement against the available digital evidence and identify contradictions.
+
+SUSPECT STATEMENT:
+${statement}
+
+AVAILABLE EVIDENCE FILES:
+${evidenceDesc}
+
+Return a JSON object with exactly this structure:
+{
+  "contradictions": [
+    {
+      "claim": "What the suspect claimed",
+      "data_source": "Which evidence file contradicts this",
+      "conflict": "Detailed explanation of the contradiction",
+      "severity": "high|medium|low",
+      "timestamp_claim": "Time mentioned in statement if any",
+      "timestamp_data": "Time from digital record if any",
+      "location_claim": "Location mentioned in statement if any",
+      "location_data": "Location from digital record if any"
+    }
+  ],
+  "summary": "Brief 2-3 sentence summary of key findings"
+}
+
+Severity guide:
+- high: Direct alibi contradiction, location mismatch, timing impossibility
+- medium: Inconsistent communication patterns, missing contacts
+- low: Minor discrepancies, unverified claims
+
+Return ONLY the JSON, no other text.`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  const data = await res.json();
+  const text = data.content[0].text;
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+function getDemoContradictions() {
+  return {
+    summary: "The digital evidence strongly contradicts the suspect's alibi. CDR records show active phone usage and tower pings placing the suspect 12km from the claimed location during the alleged period. GPS data confirms movement inconsistent with 'staying at home' claim.",
+    contradictions: [
+      { claim: "I was at home watching TV from 8 PM all evening", data_source: "CDR File", conflict: "CDR records show 14 outgoing calls between 8:15 PM and 11:40 PM, with tower pings from Sector 7 tower (12km from suspect's residence). Phone was actively used, not 'charging in bedroom'.", severity: "high", timestamp_claim: "8:00 PM - midnight", timestamp_data: "20:15 - 23:40", location_claim: "Home - Flat 204, Ashok Nagar", location_data: "Sector 7 Tower, MG Road area" },
+      { claim: "I did not call anyone that night", data_source: "CDR File", conflict: "CDR shows 14 outgoing calls including 3 to an unregistered number. The longest call lasted 22 minutes at 9:47 PM.", severity: "high", timestamp_claim: "All evening", timestamp_data: "21:47 - 22:09", location_claim: "", location_data: "" },
+      { claim: "My phone was charging in my bedroom all evening", data_source: "CDR + GPS Logs", conflict: "GPS log from the device shows movement trajectory from Sector 7 to Railway Station between 9 PM and 10:30 PM. Device was not stationary.", severity: "high", timestamp_claim: "8 PM onwards", timestamp_data: "21:00 - 22:30", location_claim: "Bedroom - stationary", location_data: "Moving: Sector 7 → MG Road → Railway Station" },
+      { claim: "I met my friend Suresh for lunch earlier that day around noon", data_source: "WhatsApp Export", conflict: "WhatsApp messages show suspect texting 'running late, will be there by 3' to contact 'Suresh' at 12:43 PM, suggesting the meeting was not at noon as claimed.", severity: "medium", timestamp_claim: "Around noon / 12:00 PM", timestamp_data: "12:43 PM", location_claim: "", location_data: "" },
+      { claim: "I haven't spoken to Vikram in over a month", data_source: "CDR File", conflict: "CDR shows 7 calls to number registered to 'V. Sharma' in the 10 days prior to the incident, most recent on the incident date at 7:55 PM (5 minutes before alleged 'quiet evening at home').", severity: "medium", timestamp_claim: "Over 1 month ago", timestamp_data: "7 calls in last 10 days, last on incident date", location_claim: "", location_data: "" },
+      { claim: "I went to sleep around 10 PM", data_source: "CDR File", conflict: "CDR records show a received call at 11:52 PM which lasted 4 minutes. The call was answered (not missed), indicating suspect was awake and active.", severity: "low", timestamp_claim: "~10:00 PM", timestamp_data: "23:52 PM call answered", location_claim: "", location_data: "" }
+    ]
+  };
+}
+
+function displayContradictions(list) {
+  const container = document.getElementById('contradictionsList');
+  document.getElementById('contradictionsCard').style.display = 'block';
+
+  if (list.length === 0) {
+    container.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle" style="color:var(--success)"></i><h3>No Contradictions Found</h3><p>The statement appears consistent with the available digital records.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = list.map((c, i) => `
+    <div class="contradiction-item ${c.severity}">
+      <div class="contradiction-header">
+        <div class="contradiction-claim">${i+1}. "${c.claim}"</div>
+        ${severityBadge(c.severity)}
+      </div>
+      <div class="contradiction-body">
+        <span style="font-size:12px;font-weight:600;color:var(--text-muted);">SOURCE: ${c.data_source}</span>
+        <div style="margin-top:6px;">${c.conflict}</div>
+      </div>
+      <div class="contradiction-meta">
+        ${c.timestamp_claim ? `<span><i class="fas fa-clock"></i> Claimed: ${c.timestamp_claim}</span>` : ''}
+        ${c.timestamp_data ? `<span><i class="fas fa-database"></i> Data: ${c.timestamp_data}</span>` : ''}
+        ${c.location_claim ? `<span><i class="fas fa-map-pin"></i> Claimed: ${c.location_claim}</span>` : ''}
+        ${c.location_data ? `<span><i class="fas fa-location-dot"></i> Data: ${c.location_data}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateSummary(list, summary) {
+  document.getElementById('analysisSummary').style.display = 'none';
+  document.getElementById('severityChart').style.display = 'block';
+
+  const high = list.filter(c => c.severity === 'high').length;
+  const med = list.filter(c => c.severity === 'medium').length;
+  const low = list.filter(c => c.severity === 'low').length;
+
+  document.getElementById('highCount').textContent = high;
+  document.getElementById('medCount').textContent = med;
+  document.getElementById('lowCount').textContent = low;
+
+  if (summary) {
+    document.getElementById('aiSummary').innerHTML = `<strong>AI Summary:</strong> ${summary}`;
+  }
+}
+
+function filterContradictions(sev, el) {
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const filtered = sev === 'all' ? allContradictions : allContradictions.filter(c => c.severity === sev);
+  displayContradictions(filtered);
+}
+
+// Load API key from settings to sessionStorage
+async function loadApiKey() {
+  const data = await apiGet('/api/settings/apikey');
+  // The actual key is in the session server-side, this just checks if it exists
+}
+
+init();
+</script>
+{% endblock %}

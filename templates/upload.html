@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Upload Files{% endblock %}
+{% block page_title %}Upload Evidence — {{ case.case_id }}{% endblock %}
+{% block top_actions %}
+  <a href="/analysis/{{ case.case_id }}" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Run Analysis</a>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:20px;padding:16px 20px;background:var(--accent-light);border-radius:var(--radius);border:1px solid #bfdbfe;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+  <div>
+    <div style="font-size:15px;font-weight:700;color:var(--accent)">{{ case.title }}</div>
+    <div style="font-size:13px;color:var(--text-secondary);">Suspect: {{ case.suspect_name or 'Not specified' }} &nbsp;·&nbsp; Case ID: {{ case.case_id }}</div>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:10px;">
+    <a href="/cases" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back</a>
+  </div>
+</div>
+
+<div class="grid-2" style="margin-bottom:20px;">
+  <!-- Upload Panel -->
+  <div class="card">
+    <div class="section-title"><i class="fas fa-upload"></i> Upload Files</div>
+    <div class="form-group">
+      <label class="form-label">File Type *</label>
+      <select class="form-control" id="fileType">
+        <option value="">Select type...</option>
+        <option value="cdr">📞 CDR (Call Detail Record) — CSV</option>
+        <option value="whatsapp">💬 WhatsApp Export — TXT/CSV</option>
+        <option value="gps">📍 GPS Logs — CSV</option>
+        <option value="statement">📄 Suspect Statement — TXT</option>
+        <option value="social">📱 Social Media Export — CSV/JSON</option>
+        <option value="email">📧 Email Export — CSV/TXT</option>
+      </select>
+    </div>
+
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
+      ondragover="event.preventDefault();this.classList.add('dragover')"
+      ondragleave="this.classList.remove('dragover')"
+      ondrop="handleDrop(event)">
+      <i class="fas fa-cloud-upload-alt"></i>
+      <p><strong>Click to browse</strong> or drag & drop files here</p>
+      <p style="margin-top:6px;font-size:12px;color:var(--text-muted)">Supports: CSV, TXT, JSON (max 50MB)</p>
+    </div>
+    <input type="file" id="fileInput" style="display:none" accept=".csv,.txt,.json" onchange="handleFileSelect(this.files[0])">
+
+    <div id="uploadProgress" style="display:none;margin-top:12px;">
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;" id="uploadStatus">Uploading...</div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:12px;" onclick="uploadFile()" id="uploadBtn" disabled>
+      <i class="fas fa-upload"></i> Upload File
+    </button>
+
+    <!-- Instructions -->
+    <div style="margin-top:20px;padding:14px;background:var(--bg);border-radius:10px;font-size:12px;color:var(--text-secondary);">
+      <strong style="display:block;margin-bottom:6px;color:var(--text-primary);">📋 File Format Tips</strong>
+      <div><strong>CDR:</strong> Date, Time, From, To, Duration, Cell_ID</div>
+      <div style="margin-top:3px;"><strong>GPS:</strong> Timestamp, Latitude, Longitude, Location_Name</div>
+      <div style="margin-top:3px;"><strong>Statement:</strong> Plain text document of suspect's account</div>
+      <div style="margin-top:3px;"><strong>WhatsApp:</strong> Exported chat file (.txt format)</div>
+    </div>
+  </div>
+
+  <!-- Uploaded Files -->
+  <div class="card">
+    <div class="section-title"><i class="fas fa-folder-open"></i> Uploaded Files</div>
+    <div id="uploadedFiles">
+      <div class="empty-state" style="padding:30px 0;">
+        <i class="fas fa-file-circle-plus"></i>
+        <h3>No files yet</h3>
+        <p>Upload at least a statement and one data file to begin analysis</p>
+      </div>
+    </div>
+    <div style="margin-top:20px;padding:14px;background:var(--success-light);border-radius:10px;border:1px solid #a7f3d0;">
+      <div style="font-size:13px;font-weight:600;color:var(--success);margin-bottom:6px;"><i class="fas fa-check-circle"></i> Recommended Files</div>
+      <div id="checklistItems" style="font-size:12px;color:var(--text-secondary);">
+        <div id="chk-statement" class="chk-item">⬜ Suspect Statement (required)</div>
+        <div id="chk-cdr" class="chk-item">⬜ CDR File</div>
+        <div id="chk-gps" class="chk-item">⬜ GPS Logs</div>
+        <div id="chk-whatsapp" class="chk-item">⬜ WhatsApp Export</div>
+      </div>
+    </div>
+    <a href="/analysis/{{ case.case_id }}" class="btn btn-success" style="width:100%;justify-content:center;margin-top:16px;">
+      <i class="fas fa-brain"></i> Proceed to Analysis
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const caseId = '{{ case.case_id }}';
+let selectedFile = null;
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) setFile(file);
+}
+
+function handleFileSelect(file) { if (file) setFile(file); }
+
+function setFile(file) {
+  selectedFile = file;
+  const zone = document.getElementById('uploadZone');
+  zone.innerHTML = `<i class="fas fa-file-check" style="color:var(--success)"></i><p><strong>${file.name}</strong></p><p style="font-size:12px;color:var(--text-muted)">${(file.size/1024/1024).toFixed(2)} MB — Click to change</p>`;
+  document.getElementById('uploadBtn').disabled = false;
+}
+
+async function uploadFile() {
+  const fileType = document.getElementById('fileType').value;
+  if (!fileType) { showToast('Please select a file type', 'error'); return; }
+  if (!selectedFile) { showToast('Please select a file', 'error'); return; }
+
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+  formData.append('file_type', fileType);
+
+  document.getElementById('uploadProgress').style.display = 'block';
+  document.getElementById('uploadBtn').disabled = true;
+  document.getElementById('progressFill').style.width = '30%';
+  document.getElementById('uploadStatus').textContent = 'Uploading file...';
+
+  const xhr = new XMLHttpRequest();
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const pct = Math.round((e.loaded / e.total) * 100);
+      document.getElementById('progressFill').style.width = pct + '%';
+    }
+  };
+
+  xhr.onload = () => {
+    const data = JSON.parse(xhr.responseText);
+    if (data.success) {
+      document.getElementById('progressFill').style.width = '100%';
+      document.getElementById('uploadStatus').textContent = `✓ Uploaded: ${data.filename} (${data.row_count} rows)`;
+      showToast('File uploaded successfully!', 'success');
+      selectedFile = null;
+      document.getElementById('uploadBtn').disabled = true;
+      document.getElementById('uploadZone').innerHTML = `<i class="fas fa-cloud-upload-alt"></i><p><strong>Click to browse</strong> or drag & drop files here</p><p style="font-size:12px;color:var(--text-muted)">Supports: CSV, TXT, JSON (max 50MB)</p>`;
+      loadUploadedFiles();
+      setTimeout(() => { document.getElementById('uploadProgress').style.display = 'none'; }, 2000);
+    } else {
+      showToast(data.error || 'Upload failed', 'error');
+      document.getElementById('uploadBtn').disabled = false;
+    }
+  };
+
+  xhr.open('POST', `/api/upload/${caseId}`);
+  xhr.send(formData);
+}
+
+async function loadUploadedFiles() {
+  const files = await apiGet(`/api/uploads/${caseId}`);
+  const container = document.getElementById('uploadedFiles');
+  const types = files.map(f => f.file_type);
+
+  // Update checklist
+  ['statement','cdr','gps','whatsapp'].forEach(t => {
+    const el = document.getElementById(`chk-${t}`);
+    if (el) el.textContent = types.includes(t) ? `✅ ${t.charAt(0).toUpperCase() + t.slice(1)}` : el.textContent.replace('✅','⬜');
+  });
+
+  if (files.length === 0) {
+    container.innerHTML = `<div class="empty-state" style="padding:30px 0;"><i class="fas fa-file-circle-plus"></i><h3>No files yet</h3><p>Upload at least a statement and one data file</p></div>`;
+    return;
+  }
+
+  const typeIcons = { cdr:'📞', whatsapp:'💬', gps:'📍', statement:'📄', social:'📱', email:'📧' };
+  container.innerHTML = files.map(f => `
+    <div class="file-item">
+      <div class="file-icon txt" style="font-size:20px;background:none;">${typeIcons[f.file_type] || '📁'}</div>
+      <div class="file-info">
+        <div class="file-name">${f.file_name}</div>
+        <div class="file-meta">${f.file_type.toUpperCase()} · ${f.row_count} rows · ${formatDate(f.uploaded_at)}</div>
+      </div>
+      <i class="fas fa-check-circle file-check"></i>
+    </div>
+  `).join('');
+}
+
+loadUploadedFiles();
+</script>
+{% endblock %}

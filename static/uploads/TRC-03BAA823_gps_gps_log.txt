@@ -1,0 +1,195 @@
+Timestamp,Latitude,Longitude,Accuracy_Meters,Speed_KMH,Location_Name,Area,Device_ID
+2024-03-15 18:30:00,17.4126,78.4071,12,0,Home - Flat 204 Ashok Nagar,Banjara Hills,DEV_RK_001
+2024-03-15 18:45:00,17.4126,78.4071,10,0,Home - Flat 204 Ashok Nagar,Banjara Hills,DEV_RK_001
+2024-03-15 19:00:00,17.4126,78.4071,8,0,Home - Flat 204 Ashok Nagar,Banjara Hills,DEV_RK_001
+2024-03-15 19:15:00,17.4126,78.4071,11,0,Home - Flat 204 Ashok Nagar,Banjara Hills,DEV_RK_001
+2024-03-15 19:47:00,17.4201,78.4312,18,34,MG Road - Near Shoppers Stop,Secunderabad,DEV_RK_001
+2024-03-15 19:55:00,17.4389,78.4756,15,28,Secunderabad West - MG Road,Secunderabad,DEV_RK_001
+2024-03-15 20:05:00,17.4412,78.4801,12,0,MG Road Sector 7 Parking,Secunderabad,DEV_RK_001
+2024-03-15 20:20:00,17.4412,78.4801,9,0,MG Road Sector 7 Parking,Secunderabad,DEV_RK_001
+2024-03-15 20:35:00,17.4412,78.4801,14,0,MG Road Sector 7 Parking,Secunderabad,DEV_RK_001
+2024-03-15 20:50:00,17.4412,78.4801,10,0,MG Road Sector 7 Parking,Secunderabad,DEV_RK_001
+2024-03-15 21:10:00,17.4489,78.4912,22,41,Moving - MG Road to Station Road,Secunderabad,DEV_RK_001
+2024-03-15 21:20:00,17.4521,78.4978,16,18,Secunderabad Railway Station - East Gate,Secunderabad,DEV_RK_001
+2024-03-15 21:30:00,17.4521,78.4978,11,0,Secunderabad Railway Station - East Gate,Secunderabad,DEV_RK_001
+2024-03-15 21:45:00,17.4521,78.4978,13,0,Secunderabad Railway Station - East Gate,Secunderabad,DEV_RK_001
+2024-03-15 22:00:00,17.4521,78.4978,10,0,Secunderabad Railway Station - Platform Area,Secunderabad,DEV_RK_001
+2024-03-15 22:15:00,17.4521,78.4978,15,0,Secunderabad Railway Station - Platform Area,Secunderabad,DEV_RK_001
+2024-03-15 22:30:00,17.4521,78.4978,12,0,Secunderabad Railway Station - Platform Area,Secunderabad,DEV_RK_001
+2024-03-15 22:48:00,17.4489,78.4912,19,32,Moving - Station Road back toward MG Road,Secunderabad,DEV_RK_001
+2024-03-15 23:10:00,17.4201,78.4312,14,27,MG Road Near Shoppers Stop,Secunderabad,DEV_RK_001
+2024-03-15 23:40:00,17.4126,78.4071,10,0,Home - Flat 204 Ashok Nagar,Banjara Hills,DEV_RK_001
+2024-03-15 12:00:00,17.4320,78.3980,12,0,Jubilee Hills - Film Nagar Area,Jubilee Hills,DEV_RK_001
+2024-03-15 12:30:00,17.4320,78.3980,10,0,Jubilee Hills - Film Nagar Area,Jubilee Hills,DEV_RK_001
+2024-03-15 13:15:00,17.4320,78.3980,11,0,Jubilee Hills - Film Nagar Area,Jubilee Hills,DEV_RK_001
+2024-03-15 14:05:00,17.4320,78.3980,9,0,Jubilee Hills - Film Nagar Area,Jubilee Hills,DEV_RK_001
+2024-03-15 09:00:00,17.4479,78.3748,8,0,Hitech City - Cyber Towers Office,Hitech City,DEV_RK_001
+2024-03-15 10:00:00,17.4479,78.3748,10,0,Hitech City - Cyber Towers Office,Hitech City,DEV_RK_001
+2024-03-15 11:00:00,17.4479,78.3748,12,0,Hitech City - Cyber Towers Office,Hitech City,DEV_RK_001
+2024-03-15 16:00:00,17.4479,78.3748,9,0,Hitech City - Cyber Towers Office,Hitech City,DEV_RK_001
+2024-03-15 17:30:00,17.4126,78.4071,11,0,Home - Flat 204 Ashok Nagar,Banjara Hills,DEV_RK_001
+```
+
+---
+
+### File 4: `whatsapp_export.txt` (WhatsApp Chat Export)
+```
+WhatsApp Chat with Vikram Nair
+Messages exported: 15 March 2024
+
+15/03/2024, 11:22 AM - Rajesh Kumar: Bhai ready ho jao. Aaj raat ka plan confirm hai
+15/03/2024, 11:35 AM - Vikram Nair: Haan bhai. Kya time pe milna hai
+15/03/2024, 11:36 AM - Rajesh Kumar: 9 baje. Station ke paas. East gate pe milte hain
+15/03/2024, 11:40 AM - Vikram Nair: Ok done. Koi dikkat nahi hogi na
+15/03/2024, 11:42 AM - Rajesh Kumar: Nahi. Sab plan ke hisaab se hoga. Phone mat karna baad mein
+15/03/2024, 12:43 PM - Rajesh Kumar: Suresh bhai running late hun. 3 baje tak pahunche
+15/03/2024, 12:45 PM - Suresh Menon: Koi baat nahi. Main wait karunga. Tandoor Palace pe hun
+15/03/2024, 03:15 PM - Suresh Menon: Arre yaar kab aa rahe ho. Bahut time ho gaya
+15/03/2024, 03:22 PM - Rajesh Kumar: Bas 10 min. Meeting thodi long ho gayi
+15/03/2024, 08:05 PM - Rajesh Kumar: Vikram bhai. Main nikal raha hun ghar se
+15/03/2024, 08:07 PM - Vikram Nair: Ok bhai. Main bhi pahunch raha hun
+15/03/2024, 09:15 PM - Vikram Nair: Aa gaya kya station pe
+15/03/2024, 09:18 PM - Rajesh Kumar: Haan pahunch gaya. East gate pe hun
+15/03/2024, 09:20 PM - Vikram Nair: Ok 5 min mein aata hun
+15/03/2024, 11:47 PM - Rajesh Kumar: Ghar pahunch gaya. Sab theek tha
+15/03/2024, 11:49 PM - Vikram Nair: Theek hai. Kal baat karte hain
+14/03/2024, 03:30 PM - Vikram Nair: Kal ka plan confirm kar bhai
+14/03/2024, 03:45 PM - Rajesh Kumar: Haan. Sab set hai. Station pe 9 baje
+14/03/2024, 06:00 PM - Vikram Nair: Vehicle ka kya
+14/03/2024, 06:10 PM - Rajesh Kumar: Mamaji ki gaadi leke aaunga. Blue Wagon R MH-12-AB-3344
+13/03/2024, 10:00 AM - Rajesh Kumar: Vikram bhai plan ke baare mein baat karni hai
+13/03/2024, 10:15 AM - Vikram Nair: Haan bhai bolo. Kya soch rahe ho
+13/03/2024, 10:20 AM - Rajesh Kumar: 15 ko karte hain. Friday raat sahi rahegi
+```
+
+---
+
+## ?? VERA — Sample OCR Documents
+
+### OCR Sample 1: FIR with Heavy OCR Errors (paste into Digitize ? OCR text box)
+```
+FIRST INFORMATION REPORT
+(Under Section 154 Cr.P.C.)
+
+D1str1ct: Hyderabad
+P01ice Stat1on: Secunderabad North
+FIR No: OO45/2O24
+Date of FIR: 15/O3/2O24
+Time of FIR: 14:3O Hrs
+
+OFFENCE DETAILS:
+Section of Law: 379/411 lPC
+Date of 0ccurrence: 15/O3/2O24
+Time of 0ccurrence: Between 21:OO to 23:OO Hrs
+Place of 0ccurrence: Secunderabad Ra1lway Stat1on Prec1ncts
+
+COMPLAINANT DETAILS:
+Name: Ramesh Ku1nar (Ku1nar could be Kumar)
+Age: 35 Yrs
+Father/Husband Name: Late Gopal Ku1nar
+Address: F1at 2O4, Ashok Nagar, Banjara H1lls, Hyderabad - 5OOO34
+Mobile: 9876OO1234 (possibly 98760O1234)
+Occupation: S/W Eng1neer
+
+ACCUSED DETAILS:
+Name: Unknown / Not 1dent1fied
+Description: Ma1e, approx 25-3O yrs, med1um bu1ld
+
+PROPERTY STOLEN:
+1. One (1) Samsung mob1le phone - Mode1 S23 - Va1ue Rs.45,OOO/-
+2. Cash amount Rs.12,5OO/-
+3. One (1) 1eather wa11et - Brown co1our
+
+BRIEF FACTS:
+The comp1ainant states that on 15/O3/2O24 wh1le he was at the
+Secunderabad Rai1way Stat1on wait1ng for Train No. 123O4,
+an unknown accused snatched his mob1le phone and wa11et
+and f1ed the scene on a two-whe1er vehic1e.
+
+Witness: N1l
+FIR Registered by: Sub-Inspector A.K. Sharma (Badge: 2O14-SI-447)
+Station: Secunderabad North P.S.
+```
+
+**What VERA will detect as low-confidence:** D1str1ct, P01ice, OO45/2O24, 15/O3/2O24, Ku1nar, F1at, 5OOO34, 9876OO1234, S/W Eng1neer, mob1le, Mode1, Va1ue, 45,OOO, 12,5OO, 1eather, wa11et, co1our, comp1ainant, Rai1way, wait1ng, 123O4, f1ed, whe1er, vehic1e
+
+---
+
+### OCR Sample 2: Affidavit with Moderate Errors
+```
+AFFIDAVIT
+
+I, Suresh Menon, Son of Krishnan Menon,
+Age: 42 years, Occupation: Business,
+Residing at: 14, Green Park Colony, Jubilee H1lls,
+Hyderabad - 5OOO33,
+
+Do hereby solemnly affirm and state as follows:
+
+1. That I am the deponent herein and the facts stated hereunder
+   are true and correct to the best of my know1edge and belief.
+
+2. That on 15th March 2O24, I had agreed to meet Rajesh Kumar
+   for lunch at Tandoor Palace Restaurant, Film Nagar,
+   Jubilee Hills at 12:OO Noon.
+
+3. That the said Rajesh Kumar arrived at approximately 3:15 PM,
+   more than THREE (3) HOURS 1ate from the agreed time.
+
+4. That during the lunch which 1asted till approximately 4:3O PM,
+   Rajesh Kumar appeared nervous and distracted.
+
+5. That Rajesh Kumar received mu1tiple phone calls during lunch
+   which he stepped away to attend to.
+
+6. That I am making this affidavit to assist the investigating
+   authorities in the matter.
+
+Solemnly affirmed at Hyderabad on this 18th day of March 2O24.
+
+DEPONENT
+Suresh Menon
+
+Before me:
+Notary Public: Adv. R.K. Sharma
+Registration No: HYD/NP/2O18/OO45
+```
+
+---
+
+### OCR Sample 3: Witness Statement (Clean — most fields high confidence)
+```
+WITNESS STATEMENT
+
+Police Station: Secunderabad North
+Case Reference: FIR/OO45/2024
+Date: 18 March 2024
+Time: 11:30 AM
+
+Name of Witness: Priya Sharma
+Age: 28 Years
+Occupation: Shop Owner
+Address: Shop No. 5, Platform Road, Secunderabad Railway Station
+Mobile: 9900112233
+
+Statement:
+
+On the evening of 15th March 2024, at approximately 9:20 PM,
+I was present at my mobile accessories shop located near the
+East Gate of Secunderabad Railway Station.
+
+I observed a blue colored Wagon R vehicle with registration
+number MH-12-AB-3344 parked near the East Gate for approximately
+two hours between 9:15 PM and 11:30 PM.
+
+I noticed two males in the vehicle. One of them got out at
+approximately 9:45 PM and re-entered the station premises.
+
+I can clearly identify the vehicle as I noted the number due
+to the unusual parking duration in a no-parking zone.
+
+I am making this statement voluntarily without any pressure
+or coercion from any authority.
+
+Signature of Witness: Priya Sharma
+Recorded by: SI A.K. Sharma, Badge No: 2014-SI-447

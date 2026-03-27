@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div style="max-width:640px;">
+  <!-- API Key -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="section-title"><i class="fas fa-key"></i> Anthropic API Key</div>
+    <div style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;">
+      TRACE uses the Anthropic Claude API to extract claims from suspect statements and detect contradictions with digital records. Your API key is stored in your browser session and never saved to the database.
+    </div>
+    <div class="form-group">
+      <label class="form-label">API Key</label>
+      <div style="display:flex;gap:10px;">
+        <input type="password" class="form-control" id="apiKey" placeholder="sk-ant-api03-...">
+        <button class="btn btn-outline btn-sm" onclick="toggleKeyVisibility()" style="white-space:nowrap;"><i class="fas fa-eye" id="eyeIcon"></i></button>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:6px;"><a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">Get your API key from console.anthropic.com</a></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" onclick="saveApiKey()"><i class="fas fa-save"></i> Save API Key</button>
+      <button class="btn btn-outline" onclick="testApiKey()"><i class="fas fa-plug"></i> Test Connection</button>
+    </div>
+    <div id="apiStatus" style="margin-top:12px;font-size:13px;display:none;"></div>
+  </div>
+
+  <!-- Profile -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="section-title"><i class="fas fa-user"></i> Profile Settings</div>
+    <div class="form-group">
+      <label class="form-label">Display Name</label>
+      <input type="text" class="form-control" id="profileName" placeholder="Your full name" value="{{ user_name }}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">New Password</label>
+      <input type="password" class="form-control" id="newPassword" placeholder="Leave blank to keep current">
+    </div>
+    <button class="btn btn-primary" onclick="updateProfile()"><i class="fas fa-save"></i> Update Profile</button>
+  </div>
+
+  <!-- About -->
+  <div class="card">
+    <div class="section-title"><i class="fas fa-info-circle"></i> About TRACE</div>
+    <div style="font-size:13px;color:var(--text-secondary);line-height:1.8;">
+      <strong>TRACE</strong> — Timeline & Record Analysis Contradiction Engine<br>
+      Version 1.0.0 · Built for forensic investigators<br><br>
+      <strong>Supported evidence types:</strong> CDR (CSV), WhatsApp exports (TXT), GPS logs (CSV), suspect statements (TXT), social media exports, email exports.<br><br>
+      <strong>How contradictions are detected:</strong><br>
+      • NLP claim extraction from suspect statements via Claude API<br>
+      • Rule-based temporal and geospatial cross-referencing<br>
+      • Severity scoring based on alibi impact<br>
+      • Court-ready PDF export with chain-of-evidence metadata
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load saved API key indicator
+async function checkApiKey() {
+  const data = await apiGet('/api/settings/apikey');
+  if (data.has_key) {
+    document.getElementById('apiStatus').style.display = 'block';
+    document.getElementById('apiStatus').innerHTML = '<span style="color:var(--success);"><i class="fas fa-check-circle"></i> API key is configured in this session</span>';
+    document.getElementById('apiKey').placeholder = '••••••••••••••• (configured)';
+  }
+  // Also load from sessionStorage
+  const stored = sessionStorage.getItem('traceApiKey');
+  if (stored) document.getElementById('apiKey').placeholder = '••••••••••••••• (saved locally)';
+}
+
+function toggleKeyVisibility() {
+  const input = document.getElementById('apiKey');
+  const icon = document.getElementById('eyeIcon');
+  if (input.type === 'password') { input.type = 'text'; icon.className = 'fas fa-eye-slash'; }
+  else { input.type = 'password'; icon.className = 'fas fa-eye'; }
+}
+
+async function saveApiKey() {
+  const key = document.getElementById('apiKey').value.trim();
+  if (!key) { showToast('Enter an API key', 'error'); return; }
+  // Save to sessionStorage for browser-side API calls
+  sessionStorage.setItem('traceApiKey', key);
+  await apiPost('/api/settings/apikey', { api_key: key });
+  showToast('API key saved!', 'success');
+  document.getElementById('apiStatus').style.display = 'block';
+  document.getElementById('apiStatus').innerHTML = '<span style="color:var(--success);"><i class="fas fa-check-circle"></i> API key configured for this session</span>';
+}
+
+async function testApiKey() {
+  const key = document.getElementById('apiKey').value.trim() || sessionStorage.getItem('traceApiKey');
+  if (!key) { showToast('Enter an API key first', 'error'); return; }
+  const btn = document.querySelectorAll('.btn')[1];
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span> Testing...';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:10, messages:[{role:'user',content:'Hi'}] })
+    });
+    const data = await res.json();
+    if (data.content) {
+      showToast('API connection successful!', 'success');
+      document.getElementById('apiStatus').innerHTML = '<span style="color:var(--success);"><i class="fas fa-check-circle"></i> Connection verified — API is working</span>';
+    } else {
+      showToast('API error: ' + (data.error?.message || 'Unknown error'), 'error');
+    }
+  } catch (e) {
+    showToast('Connection failed: ' + e.message, 'error');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-plug"></i> Test Connection';
+}
+
+async function updateProfile() {
+  const name = document.getElementById('profileName').value.trim();
+  const new_password = document.getElementById('newPassword').value;
+  const data = await apiPost('/api/settings/update', { name, new_password: new_password || null });
+  if (data.success) { showToast('Profile updated!', 'success'); }
+  else { showToast('Update failed', 'error'); }
+}
+
+checkApiKey();
+</script>
+{% endblock %}

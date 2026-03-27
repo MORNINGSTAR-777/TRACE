@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRACE — Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="/static/css/main.css">
+<style>
+  body { background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 50%, #f0fdf4 100%); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+  .auth-card { background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.1); width: 100%; max-width: 420px; overflow: hidden; }
+  .auth-header { background: linear-gradient(135deg, #0f1724 0%, #1a2744 100%); padding: 30px 32px; text-align: center; }
+  .auth-logo-mark { width: 44px; height: 44px; background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-family: 'Playfair Display'; font-size: 20px; font-weight: 700; color: white; margin-bottom: 10px; }
+  .auth-title { font-size: 20px; font-weight: 700; color: white; letter-spacing: 2px; }
+  .auth-body { padding: 28px 32px; }
+  .auth-body h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .auth-body p { font-size: 13px; color: #6b7280; margin-bottom: 22px; }
+  .auth-link { text-align: center; margin-top: 16px; font-size: 13px; color: #6b7280; }
+  .auth-link a { color: #2563eb; text-decoration: none; font-weight: 600; }
+  .error-msg { color: #dc2626; font-size: 13px; margin-top: 10px; display: none; }
+  .success-msg { color: #059669; font-size: 13px; margin-top: 10px; display: none; }
+  .btn-full { width: 100%; justify-content: center; padding: 12px; }
+</style>
+</head>
+<body>
+<div class="auth-card">
+  <div class="auth-header">
+    <div class="auth-logo-mark">T</div>
+    <div class="auth-title">TRACE</div>
+  </div>
+  <div class="auth-body">
+    <h2>Create Account</h2>
+    <p>Register as a forensic investigator</p>
+    <div class="form-group">
+      <label class="form-label">Full Name</label>
+      <input type="text" class="form-control" id="name" placeholder="Inspector Sharma">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input type="email" class="form-control" id="email" placeholder="you@police.gov.in">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-control" id="password" placeholder="Min 6 characters">
+    </div>
+    <div class="error-msg" id="errorMsg"></div>
+    <div class="success-msg" id="successMsg"></div>
+    <button class="btn btn-primary btn-full" onclick="doRegister()">
+      <i class="fas fa-user-plus"></i> Create Account
+    </button>
+    <div class="auth-link">Already have an account? <a href="/login">Sign In</a></div>
+  </div>
+</div>
+<script>
+async function doRegister() {
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  if (!name || !email || !password) { showError('All fields are required.'); return; }
+  if (password.length < 6) { showError('Password must be at least 6 characters.'); return; }
+  const btn = document.querySelector('.btn-primary');
+  btn.disabled = true;
+  const res = await fetch('/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, email, password}) });
+  const data = await res.json();
+  if (data.success) {
+    document.getElementById('successMsg').textContent = 'Account created! Redirecting...';
+    document.getElementById('successMsg').style.display = 'block';
+    setTimeout(() => window.location.href = '/login', 1500);
+  } else {
+    showError(data.error || 'Registration failed');
+    btn.disabled = false;
+  }
+}
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+</script>
+</body>
+</html>

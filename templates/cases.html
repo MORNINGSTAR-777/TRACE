@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Cases{% endblock %}
+{% block page_title %}All Cases{% endblock %}
+{% block top_actions %}
+  <button class="btn btn-primary btn-sm" onclick="openModal('newCaseModal')"><i class="fas fa-plus"></i> New Case</button>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom:0">
+  <div class="card-header">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <input type="text" class="form-control" id="searchInput" placeholder="Search cases..." style="width:260px;" oninput="filterCases()">
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setFilter('all', this)">All</button>
+        <button class="filter-tab" onclick="setFilter('active', this)">Active</button>
+        <button class="filter-tab" onclick="setFilter('analyzed', this)">Analyzed</button>
+      </div>
+    </div>
+    <span id="caseCount" style="font-size:13px;color:var(--text-muted)"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Case ID</th>
+          <th>Title</th>
+          <th>Suspect</th>
+          <th>Status</th>
+          <th>Files</th>
+          <th>Contradictions</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="casesTable">
+        <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);"><div class="loader"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- New Case Modal -->
+<div class="modal-overlay" id="newCaseModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-folder-plus" style="color:var(--accent)"></i> New Case</div>
+      <button class="modal-close" onclick="closeModal('newCaseModal')">&times;</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Case Title *</label>
+      <input type="text" class="form-control" id="caseTitle" placeholder="Robbery Investigation - Sector 14">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Suspect Name</label>
+      <input type="text" class="form-control" id="suspectName" placeholder="Full name of suspect">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('newCaseModal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="createCase()"><i class="fas fa-plus"></i> Create Case</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allCases = [];
+let currentFilter = 'all';
+
+async function loadCases() {
+  allCases = await apiGet('/api/cases');
+  renderCases();
+}
+
+function renderCases() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  let filtered = allCases.filter(c => {
+    const matchFilter = currentFilter === 'all' || c.status === currentFilter;
+    const matchSearch = !search || c.title.toLowerCase().includes(search) || c.case_id.toLowerCase().includes(search) || (c.suspect_name || '').toLowerCase().includes(search);
+    return matchFilter && matchSearch;
+  });
+
+  document.getElementById('caseCount').textContent = `${filtered.length} case${filtered.length !== 1 ? 's' : ''}`;
+
+  const tbody = document.getElementById('casesTable');
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="fas fa-folder-open"></i><h3>No cases found</h3><p>Create a new case to begin analysis</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(c => `
+    <tr>
+      <td><span class="font-mono" style="font-family:var(--font-mono);font-size:12px;background:var(--bg);padding:3px 8px;border-radius:6px;">${c.case_id}</span></td>
+      <td><strong>${c.title}</strong></td>
+      <td>${c.suspect_name || '<span style="color:var(--text-muted)">—</span>'}</td>
+      <td>${statusBadge(c.status)}</td>
+      <td><span style="font-size:13px;">${c.file_count || 0} files</span></td>
+      <td>${c.contradiction_count > 0 ? `<span style="color:var(--danger);font-weight:700;">${c.contradiction_count}</span>` : '<span style="color:var(--text-muted)">0</span>'}</td>
+      <td style="font-size:13px;color:var(--text-muted);">${formatDate(c.created_at)}</td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <a href="/upload/${c.case_id}" class="btn btn-outline btn-sm" title="Upload files"><i class="fas fa-upload"></i></a>
+          <a href="/analysis/${c.case_id}" class="btn btn-outline btn-sm" title="Analyze"><i class="fas fa-search"></i></a>
+          <a href="/report/${c.case_id}" class="btn btn-outline btn-sm" title="Report"><i class="fas fa-file-alt"></i></a>
+          <button class="btn btn-danger btn-sm" onclick="deleteCase('${c.case_id}')" title="Delete"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function setFilter(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderCases();
+}
+
+function filterCases() { renderCases(); }
+
+async function createCase() {
+  const title = document.getElementById('caseTitle').value.trim();
+  const suspect_name = document.getElementById('suspectName').value.trim();
+  if (!title) { showToast('Case title is required', 'error'); return; }
+  const data = await apiPost('/api/cases', { title, suspect_name });
+  if (data.success) {
+    showToast('Case created!', 'success');
+    closeModal('newCaseModal');
+    window.location.href = `/upload/${data.case_id}`;
+  }
+}
+
+async function deleteCase(caseId) {
+  confirmAction(`Delete case ${caseId} and all its data? This cannot be undone.`, async () => {
+    const data = await apiDelete(`/api/cases/${caseId}`);
+    if (data.success) { showToast('Case deleted', 'success'); loadCases(); }
+  });
+}
+
+loadCases();
+</script>
+{% endblock %}

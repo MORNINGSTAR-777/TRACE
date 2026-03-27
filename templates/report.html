@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Report{% endblock %}
+{% block page_title %}Contradiction Report{% endblock %}
+{% block top_actions %}
+  <button class="btn btn-primary btn-sm" onclick="printReport()"><i class="fas fa-print"></i> Print / Save PDF</button>
+{% endblock %}
+
+{% block content %}
+<div id="reportContent" style="max-width:900px;margin:0 auto;">
+  <div class="loader" style="display:block;margin:60px auto;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  @media print {
+    .sidebar, .top-bar, .top-bar-actions, .btn { display: none !important; }
+    .main-content { margin-left: 0 !important; }
+    .content-area { padding: 0 !important; }
+  }
+  .report-header { background: linear-gradient(135deg, #0f1724, #1e3a5f); color: white; padding: 36px; border-radius: 16px; margin-bottom: 24px; }
+  .report-seal { width: 56px; height: 56px; background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; font-family: 'Playfair Display'; margin-bottom: 16px; }
+  .report-title { font-size: 22px; font-weight: 700; letter-spacing: 2px; }
+  .report-subtitle { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+  .report-meta { display: flex; gap: 24px; margin-top: 20px; flex-wrap: wrap; }
+  .report-meta-item label { display: block; font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+  .report-meta-item value { display: block; font-size: 14px; font-weight: 600; color: white; }
+  .section-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
+  .section-card h3 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--border); }
+  .contradiction-report-item { padding: 16px; margin-bottom: 12px; border-radius: 10px; border: 1px solid; }
+  .contradiction-report-item.high { background: #fff5f5; border-color: #fca5a5; }
+  .contradiction-report-item.medium { background: #fffbeb; border-color: #fcd34d; }
+  .contradiction-report-item.low { background: #f0fdf4; border-color: #86efac; }
+  .claim-quote { font-style: italic; color: var(--text-secondary); margin: 8px 0; padding: 8px 12px; background: rgba(0,0,0,0.03); border-left: 3px solid #e2e8f0; border-radius: 0 6px 6px 0; }
+  .stamp { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: 2px solid var(--accent); border-radius: 8px; color: var(--accent); font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+</style>
+
+<script>
+const caseId = '{{ case.case_id }}';
+
+async function loadReport() {
+  const data = await apiGet(`/api/report/data/${caseId}`);
+  const { case: c, contradictions, latest_run, uploads } = data;
+
+  const high = contradictions.filter(x => x.severity === 'high').length;
+  const med = contradictions.filter(x => x.severity === 'medium').length;
+  const low = contradictions.filter(x => x.severity === 'low').length;
+
+  const typeIcons = {cdr:'📞',whatsapp:'💬',gps:'📍',statement:'📄',social:'📱',email:'📧'};
+
+  document.getElementById('reportContent').innerHTML = `
+    <div class="report-header">
+      <div class="report-seal">T</div>
+      <div class="report-title">TRACE FORENSIC CONTRADICTION REPORT</div>
+      <div class="report-subtitle">Timeline & Record Analysis Contradiction Engine — Confidential</div>
+      <div class="report-meta">
+        <div class="report-meta-item"><label>Case ID</label><value>${c.case_id || caseId}</value></div>
+        <div class="report-meta-item"><label>Case Title</label><value>${c.title || '—'}</value></div>
+        <div class="report-meta-item"><label>Suspect</label><value>${c.suspect_name || 'Not specified'}</value></div>
+        <div class="report-meta-item"><label>Generated</label><value>${formatDate(new Date().toISOString())}</value></div>
+        <div class="report-meta-item"><label>Status</label><value>${c.status || '—'}</value></div>
+      </div>
+    </div>
+
+    <!-- Executive Summary -->
+    <div class="section-card">
+      <h3>📋 Executive Summary</h3>
+      <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:100px;text-align:center;padding:16px;background:var(--danger-light);border-radius:10px;">
+          <div style="font-size:32px;font-weight:800;color:var(--danger);">${high}</div>
+          <div style="font-size:12px;color:var(--danger);font-weight:700;">HIGH SEVERITY</div>
+        </div>
+        <div style="flex:1;min-width:100px;text-align:center;padding:16px;background:var(--warning-light);border-radius:10px;">
+          <div style="font-size:32px;font-weight:800;color:var(--warning);">${med}</div>
+          <div style="font-size:12px;color:var(--warning);font-weight:700;">MEDIUM SEVERITY</div>
+        </div>
+        <div style="flex:1;min-width:100px;text-align:center;padding:16px;background:var(--success-light);border-radius:10px;">
+          <div style="font-size:32px;font-weight:800;color:var(--success);">${low}</div>
+          <div style="font-size:12px;color:var(--success);font-weight:700;">LOW SEVERITY</div>
+        </div>
+        <div style="flex:1;min-width:100px;text-align:center;padding:16px;background:var(--accent-light);border-radius:10px;">
+          <div style="font-size:32px;font-weight:800;color:var(--accent);">${contradictions.length}</div>
+          <div style="font-size:12px;color:var(--accent);font-weight:700;">TOTAL FLAGS</div>
+        </div>
+      </div>
+      ${latest_run.summary ? `<div style="font-size:14px;color:var(--text-secondary);line-height:1.7;padding:14px;background:var(--bg);border-radius:10px;">${latest_run.summary}</div>` : ''}
+      ${latest_run.run_at ? `<div style="font-size:12px;color:var(--text-muted);margin-top:10px;">Analysis conducted: ${formatDate(latest_run.run_at)} · Processing time: ${latest_run.duration_sec}s</div>` : ''}
+    </div>
+
+    <!-- Evidence Inventory -->
+    <div class="section-card">
+      <h3>🗄️ Evidence Inventory (${uploads.length} files)</h3>
+      ${uploads.length === 0 ? '<p style="color:var(--text-muted);font-size:14px;">No files uploaded</p>' :
+        `<table style="width:100%;font-size:13px;">
+          <thead><tr><th style="text-align:left;padding:8px;background:var(--bg);font-weight:600;color:var(--text-muted);">Type</th><th style="text-align:left;padding:8px;background:var(--bg);">File</th><th style="text-align:left;padding:8px;background:var(--bg);">Records</th><th style="text-align:left;padding:8px;background:var(--bg);">Uploaded</th></tr></thead>
+          <tbody>${uploads.map(u => `<tr><td style="padding:8px;">${typeIcons[u.file_type]||'📁'} ${u.file_type.toUpperCase()}</td><td style="padding:8px;">${u.file_name}</td><td style="padding:8px;">${u.row_count}</td><td style="padding:8px;color:var(--text-muted);">${formatDate(u.uploaded_at)}</td></tr>`).join('')}</tbody>
+        </table>`}
+    </div>
+
+    <!-- Contradictions -->
+    <div class="section-card">
+      <h3>⚠️ Detailed Contradiction Analysis</h3>
+      ${contradictions.length === 0 ?
+        '<div class="empty-state" style="padding:30px;"><i class="fas fa-check-circle" style="color:var(--success)"></i><h3>No contradictions detected</h3></div>' :
+        contradictions.map((c, i) => `
+          <div class="contradiction-report-item ${c.severity}">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+              <div style="font-size:14px;font-weight:700;color:var(--text-primary);">Finding #${i+1}</div>
+              ${severityBadge(c.severity)}
+            </div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-top:6px;">SOURCE: ${c.data_source}</div>
+            <div class="claim-quote">"${c.claim}"</div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;">${c.conflict}</div>
+            ${(c.timestamp_claim || c.location_claim) ? `
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+                ${c.timestamp_claim ? `<div style="font-size:12px;"><strong>Claimed time:</strong> ${c.timestamp_claim}</div>` : ''}
+                ${c.timestamp_data ? `<div style="font-size:12px;"><strong>Digital record:</strong> ${c.timestamp_data}</div>` : ''}
+                ${c.location_claim ? `<div style="font-size:12px;"><strong>Claimed location:</strong> ${c.location_claim}</div>` : ''}
+                ${c.location_data ? `<div style="font-size:12px;"><strong>Digital location:</strong> ${c.location_data}</div>` : ''}
+              </div>` : ''}
+          </div>
+        `).join('')}
+    </div>
+
+    <!-- Footer -->
+    <div class="section-card" style="text-align:center;padding:24px;">
+      <div class="stamp"><i class="fas fa-shield-halved"></i> TRACE CERTIFIED REPORT</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:12px;">This report was generated by TRACE (Timeline & Record Analysis Contradiction Engine).<br>All findings are based on uploaded digital evidence and should be verified by a qualified forensic examiner before use in legal proceedings.</div>
+    </div>
+  `;
+}
+
+function printReport() {
+  window.print();
+}
+
+loadReport();
+</script>
+{% endblock %}

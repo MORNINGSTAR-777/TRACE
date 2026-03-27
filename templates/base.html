@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRACE — {% block title %}{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="/static/css/main.css">
+{% block head %}{% endblock %}
+</head>
+<body>
+<div class="app-shell">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">T</div>
+      <div class="logo-text">
+        <span class="logo-title">TRACE</span>
+        <span class="logo-sub">Forensic Intelligence</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard" class="nav-item {% if request.path == '/dashboard' %}active{% endif %}">
+        <i class="fas fa-th-large"></i><span>Dashboard</span>
+      </a>
+      <a href="/cases" class="nav-item {% if '/cases' in request.path %}active{% endif %}">
+        <i class="fas fa-folder-open"></i><span>Cases</span>
+      </a>
+      <a href="/settings" class="nav-item {% if '/settings' in request.path %}active{% endif %}">
+        <i class="fas fa-cog"></i><span>Settings</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">{{ user_name[0] if user_name else 'U' }}</div>
+        <div class="user-details">
+          <span class="user-name">{{ user_name }}</span>
+          <span class="user-role">Investigator</span>
+        </div>
+      </div>
+      <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i></a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="top-bar">
+      <button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+      <div class="top-bar-title">{% block page_title %}{% endblock %}</div>
+      <div class="top-bar-actions">{% block top_actions %}{% endblock %}</div>
+    </header>
+    <div class="content-area">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/static/js/main.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

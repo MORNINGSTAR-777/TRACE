@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block top_actions %}
+  <a href="/cases" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Case</a>
+{% endblock %}
+
+{% block content %}
+<div class="stats-grid" id="statsGrid">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-folder"></i></div>
+    <div><span class="stat-value" id="totalCases">—</span><span class="stat-label">Total Cases</span></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-circle-dot"></i></div>
+    <div><span class="stat-value" id="activeCases">—</span><span class="stat-label">Active Cases</span></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon yellow"><i class="fas fa-triangle-exclamation"></i></div>
+    <div><span class="stat-value" id="totalContradictions">—</span><span class="stat-label">Contradictions Found</span></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon red"><i class="fas fa-exclamation-circle"></i></div>
+    <div><span class="stat-value" id="highSeverity">—</span><span class="stat-label">High Severity Flags</span></div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fas fa-clock" style="color:var(--accent)"></i> Recent Cases</div>
+      <a href="/cases" class="btn btn-outline btn-sm">View All</a>
+    </div>
+    <div id="recentCases">
+      <div class="empty-state"><div class="loader"></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fas fa-bolt" style="color:var(--warning)"></i> Quick Actions</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <button class="btn btn-primary" onclick="document.getElementById('newCaseModal').classList.add('open')">
+        <i class="fas fa-plus-circle"></i> Create New Case
+      </button>
+      <a href="/cases" class="btn btn-outline">
+        <i class="fas fa-folder-open"></i> Browse All Cases
+      </a>
+      <a href="/settings" class="btn btn-outline">
+        <i class="fas fa-key"></i> Configure API Key
+      </a>
+    </div>
+    <div style="margin-top:24px;padding:16px;background:var(--accent-light);border-radius:10px;">
+      <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:6px;"><i class="fas fa-info-circle"></i> How TRACE Works</div>
+      <ol style="font-size:12px;color:var(--text-secondary);padding-left:16px;line-height:1.8;">
+        <li>Create a case for a suspect</li>
+        <li>Upload CDR, WhatsApp, GPS, Statement files</li>
+        <li>Run AI-powered contradiction analysis</li>
+        <li>Export court-ready PDF report</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- New Case Modal -->
+<div class="modal-overlay" id="newCaseModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Create New Case</div>
+      <button class="modal-close" onclick="document.getElementById('newCaseModal').classList.remove('open')">&times;</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Case Title *</label>
+      <input type="text" class="form-control" id="caseTitle" placeholder="e.g., Robbery Investigation - Sector 14">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Suspect Name</label>
+      <input type="text" class="form-control" id="suspectName" placeholder="e.g., Rajesh Kumar">
+    </div>
+    <div style="display:flex;gap:12px;margin-top:4px;">
+      <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('newCaseModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="createCase()"><i class="fas fa-plus"></i> Create</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadDashboard() {
+  const data = await apiGet('/api/dashboard/stats');
+  document.getElementById('totalCases').textContent = data.total_cases;
+  document.getElementById('activeCases').textContent = data.active_cases;
+  document.getElementById('totalContradictions').textContent = data.total_contradictions;
+  document.getElementById('highSeverity').textContent = data.high_severity;
+
+  const container = document.getElementById('recentCases');
+  if (!data.recent_cases || data.recent_cases.length === 0) {
+    container.innerHTML = `<div class="empty-state"><i class="fas fa-folder-open"></i><h3>No cases yet</h3><p>Create your first case to get started</p></div>`;
+    return;
+  }
+  container.innerHTML = data.recent_cases.map(c => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-size:14px;font-weight:600;">${c.title}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${c.case_id} · ${c.suspect_name || 'Unknown suspect'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        ${c.contradiction_count > 0 ? `<span style="font-size:12px;font-weight:700;color:var(--danger);">${c.contradiction_count} flags</span>` : ''}
+        <a href="/analysis/${c.case_id}" class="btn btn-outline btn-sm">Open</a>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function createCase() {
+  const title = document.getElementById('caseTitle').value.trim();
+  const suspect_name = document.getElementById('suspectName').value.trim();
+  if (!title) { showToast('Case title is required', 'error'); return; }
+  const data = await apiPost('/api/cases', { title, suspect_name });
+  if (data.success) {
+    showToast('Case created successfully', 'success');
+    document.getElementById('newCaseModal').classList.remove('open');
+    window.location.href = `/upload/${data.case_id}`;
+  } else {
+    showToast('Failed to create case', 'error');
+  }
+}
+
+loadDashboard();
+</script>
+{% endblock %}
